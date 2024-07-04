@@ -1,10 +1,12 @@
 import tqdm
 import torch,torch.nn as nn 
-
+import numpy as np
+from tqdm import tqdm
 
 def train_loop(model,train_loader,test_loader,optimizer,loss_fn,lr_schedule=None,EPOCHS=10,device='cpu',run=None):
 
-    for epoch in range(EPOCHS):
+    best_loss = float('inf')
+    for epoch in tqdm(range(1, EPOCHS + 1)):
                 
         model.train()
         train_loss = 0
@@ -70,6 +72,16 @@ def train_loop(model,train_loader,test_loader,optimizer,loss_fn,lr_schedule=None
 
                 run['metrics/learning_rate'].append(lr_schedule.get_last_lr())
 
+        if test_loss < best_loss:
+            best_loss = test_loss
+            
+            torch.save(model.state_dict(), 'best_model.pth')
+            print(f'Saved best model with test loss: {best_loss}')
+
+        if epoch == EPOCHS:
+            
+            run['model_checkpoints'].upload('best_model.pth')
+            print('Uploaded best model to run')
 
         if lr_schedule:
             lr_schedule.step()
